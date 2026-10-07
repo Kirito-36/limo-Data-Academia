@@ -16,8 +16,8 @@ assembler, simulator, tests, documentation, and examples.
 | Member | GitHub Username | Current Role |
 |---|---|---|
 | Thabelo Mapepesa| @Kirito-36 | ISA Architect |
-| Tsenolo Mokhubu | @pauseclose | Assembler Lead |
-| Rorisang Mokhubu | @Rorisang440 | Pipeline Lead |
+| Rorisang Mokhubu | @Rorisang440 | Assembler Lead |
+| Tsenolo Mokati | @pauseclose | Pipeline Lead |
 | Lebohang Soai | @MissEpsilon | Hazard-Unit Lead |
 | Kopanelo Ntsatsi | @Ntsatsik | Interface Lead |
 | Letlao Libete | @libetehercules-netizen | Test Lead |
