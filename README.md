@@ -13,15 +13,15 @@ assembler, simulator, tests, documentation, and examples.
 
 ## Team
 
-| Member | GitHub Username | Current Role |
-|---|---|---|
-| Thabelo Mapepesa| @Kirito-36 | ISA Architect |
-| Rorisang Mokhubu | @Rorisang440 | Assembler Lead |
-| Tsenolo Mokati | @pauseclose | Pipeline Lead |
-| Lebohang Soai | @MissEpsilon | Hazard-Unit Lead |
-| Kopanelo Ntsatsi | @Ntsatsik | Interface Lead |
-| Letlao Libete | @libetehercules-netizen | Test Lead |
-| Realeboha Mphatle | @Reah.mphatle | Scrum and Release Lead |
+| Member | Student Numbers |GitHub Username | Current Role |
+|---|---|---|---|
+| Thabelo Mapepesa| 202321273 |@Kirito-36 | ISA Architect |
+| Rorisang Mokhubu | 202322685 |@Rorisang440 | Assembler Lead |
+| Tsenolo Mokati | 202405314 | @pauseclose | Pipeline Lead |
+| Lebohang Soai | 202322577 |@MissEpsilon | Hazard-Unit Lead |
+| Kopanelo Ntsatsi | 201100530 |@Ntsatsik | Interface Lead |
+| Letlao Libete | 202321251 |@libetehercules-netizen | Test Lead |
+| Realeboha Mphatle | 201902287 |@Reah.mphatle | Scrum and Release Lead |
 
 > Roles rotate weekly according to the project requirements.
 
