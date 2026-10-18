@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "cpp.h"
 
 namespace limo {
 
@@ -26,9 +26,18 @@ enum class InstructionFormat {
     INVALID
 };
 
+enum class Type {
+    R,
+    I,
+    S,
+    B,
+    INVALID
+};
+
 struct DecodedInstruction {
     M1Mnemonic mnemonic = M1Mnemonic::INVALID;
     InstructionFormat format = InstructionFormat::INVALID;
+    Type type = Type::INVALID;
 
     std::uint32_t raw = 0;
     std::uint8_t opcode = 0;
