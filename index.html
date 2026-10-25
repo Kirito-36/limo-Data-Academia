@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LIMO M1 Assembler</title>
+    <style>
+      :root {
+        --bg: #0a1720;
+        --panel: #122b39;
+        --panel-2: #173b4e;
+        --accent: #5dc4ff;
+        --text: #ebf7ff;
+        --muted: #a9d0df;
+        --error: #ff7b7b;
+        --ok: #7ff0c2;
+        --border: #1d4661;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Segoe UI, sans-serif;
+        background: linear-gradient(180deg, #06141d, #0a1720 35%, #101f2a 100%);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      header { margin-bottom: 20px; }
+      .eyebrow {
+        margin: 0 0 8px 0;
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      h1 { margin: 0; }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 20px;
+      }
+      .panel {
+        background: rgba(18, 43, 57, 0.96);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.22);
+      }
+      textarea {
+        width: 100%;
+        min-height: 300px;
+        background: rgba(7, 20, 28, 0.85);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        padding: 12px;
+        resize: vertical;
+        font-family: Consolas, monospace;
+        font-size: 0.96rem;
+      }
+      .buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      button {
+        background: var(--accent);
+        color: #072231;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: rgba(93,196,255,0.12);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      #output, #errors { margin-top: 16px; }
+      .error-box {
+        display: none;
+        padding: 12px 14px;
+        color: #fff;
+        background: rgba(255,123,123,0.08);
+        border: 1px solid rgba(255,123,123,0.5);
+        border-radius: 10px;
+      }
+      .error-box.show { display: block; }
+      .instructions { display: flex; flex-direction: column; gap: 8px; }
+      .instr {
+        display: grid;
+        grid-template-columns: 75px 120px 1fr;
+        gap: 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: rgba(255,255,255,0.02);
+        padding: 10px 12px;
+        font-family: Consolas, monospace;
+      }
+      .muted { color: var(--muted); }
+      .ok { color: var(--ok); }
+      .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      table { width: 100%; border-collapse: collapse; font-family: Consolas, monospace; }
+      th, td { border-bottom: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+      th { color: var(--muted); }
+      .full { grid-column: 1 / -1; }
+      @media (max-width: 900px) {
+        .grid, .status-row { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <p class="eyebrow">CS3520 · Team Data-Academia</p>
+        <h1>LIMO M1 Assembler and Simulator</h1>
+      </header>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>Assembly editor</h2>
+          <textarea id="source" spellcheck="false">eketsa r3, r1, 5
+kopanya r5, r3, r1
+bala r4, 4(r1)
+beha r2, 8(r1)
+lekanya r1, r2, +8</textarea>
+          <div class="buttons">
+            <button id="assembleBtn">Assemble</button>
+            <button id="loadDemoBtn" class="secondary">Load demo</button>
+          </div>
+          <div id="errors" class="error-box"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Assembled machine instructions</h2>
+          <div id="output" class="instructions"></div>
+        </section>
+
+        <section class="panel full">
+          <h2>Register and memory display</h2>
+          <div class="status-row">
+            <div>
+              <h3>Registers</h3>
+              <table>
+                <thead><tr><th>Reg</th><th>Value</th></tr></thead>
+                <tbody id="registers"></tbody>
+              </table>
+            </div>
+            <div>
+              <h3>Memory</h3>
+              <table>
+                <thead><tr><th>Addr</th><th>Word</th></tr></thead>
+                <tbody id="memory"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const defaults = `eketsa r3, r1, 5
+kopanya r5, r3, r1
+bala r4, 4(r1)
+beha r2, 8(r1)
+lekanya r1, r2, +8`;
+
+      function stripComment(line) { return line.split(/[#;]/)[0].trim(); }
+      function parseRegister(token) {
+        const t = token.trim();
+        const m = t.match(/^x?(\d+)$/i);
+        if (!m) return null;
+        const n = Number(m[1]);
+        return n >= 0 && n < 32 ? n : null;
+      }
+      function parseImmediate(token) {
+        const t = token.trim();
+        if (!t) return null;
+        if (/^[-+]?0x[0-9a-f]+$/i.test(t)) return parseInt(t, 16);
+        if (/^[-+]?0b[01]+$/i.test(t)) return parseInt(t, 2);
+        if (/^[-+]?\d+$/.test(t)) return parseInt(t, 10);
+        return null;
+      }
+      function parseMemoryOperand(text) {
+        const match = text.trim().match(/^([-+]?0x[0-9a-f]+|[-+]?0b[01]+|[-+]?\d+|[A-Za-z_][A-Za-z0-9_]*)\s*\(\s*(x?\d+)\s*\)$/i);
+        if (!match) return null;
+        const imm = parseImmediate(match[1]);
+        const reg = parseRegister(match[2]);
+        if (imm === null || reg === null) return null;
+        return { imm, reg };
+      }
+      function splitComma(parts) { return parts.split(',').map((p) => p.trim()).filter(Boolean); }
+      function wordToHex(value) { return '0x' + (value >>> 0).toString(16).toUpperCase().padStart(8, '0'); }
+      function encodeR(mnemonic, rd, rs1, rs2) {
+        let funct3 = 0, funct7 = 0;
+        if (mnemonic === 'kopanya') { funct3 = 0x0; funct7 = 0x00; }
+        else if (mnemonic === 'tlosa') { funct3 = 0x0; funct7 = 0x20; }
+        else if (mnemonic === 'kapa') { funct3 = 0x6; funct7 = 0x00; }
+        else if (mnemonic === 'le') { funct3 = 0x7; funct7 = 0x00; }
+        else throw new Error('Unsupported R type');
+        return ((funct7 << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (rd << 7) | 0x33) >>> 0;
+      }
+      function encodeI(mnemonic, rd, rs1, imm) {
+        if (mnemonic === 'eketsa') return ((imm & 0xfff) << 20 | (rs1 << 15) | (0x0 << 12) | (rd << 7) | 0x13) >>> 0;
+        if (mnemonic === 'suthisa') { if (imm < 0 || imm > 31) throw new Error('Shift amount must be in [0,31]'); return ((imm & 0x1f) << 20 | (rs1 << 15) | (0x1 << 12) | (rd << 7) | 0x13) >>> 0; }
+        if (mnemonic === 'bala') return ((imm & 0xfff) << 20 | (rs1 << 15) | (0x2 << 12) | (rd << 7) | 0x03) >>> 0;
+        throw new Error('Unsupported I type');
+      }
+      function encodeS(mnemonic, rs2, rs1, imm) {
+        if (mnemonic !== 'beha') throw new Error('Unsupported S type');
+        const upper = (imm >> 5) & 0x7f;
+        const lower = imm & 0x1f;
+        return ((upper << 25) | (rs2 << 20) | (rs1 << 15) | (0x2 << 12) | (lower << 7) | 0x23) >>> 0;
+      }
+      function encodeB(mnemonic, rs1, rs2, offset) {
+        if (offset % 4 !== 0) throw new Error('Branch offset must be multiple of 4');
+        const imm = offset & 0x1fff;
+        const imm12 = (imm >> 12) & 1;
+        const imm11 = (imm >> 11) & 1;
+        const imm10_5 = (imm >> 5) & 0x3f;
+        const imm4_1 = (imm >> 1) & 0xf;
+        const funct3 = mnemonic === 'lekanya' ? 0x0 : 0x1;
+        return ((imm12 << 31) | (imm10_5 << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (imm4_1 << 8) | (imm11 << 7) | 0x63) >>> 0;
+      }
+      function assembleProgram(source) {
+        const lines = source.split('\n');
+        const labels = {};
+        let pc = 0;
+
+        for (const raw of lines) {
+          const line = stripComment(raw);
+          if (!line) continue;
+          if (/^\s*[A-Za-z_][A-Za-z0-9_]*\s*:\s*$/.test(line)) {
+            const name = line.replace(/:$/, '').trim();
+            labels[name] = pc;
+            continue;
+          }
+          const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)/);
+          if (!match) continue;
+          pc += 4;
+        }
+
+        const instructions = [];
+        pc = 0;
+
+        for (const raw of lines) {
+          const line = stripComment(raw);
+          if (!line) continue;
+          if (/^\s*[A-Za-z_][A-Za-z0-9_]*\s*:\s*$/.test(line)) continue;
+
+          const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s+(.*)$/);
+          if (!match) throw new Error('Unable to parse line: ' + line);
+
+          const mnemonic = match[1].toLowerCase();
+          const rest = match[2].trim();
+          let word = 0;
+
+          if (['kopanya', 'tlosa', 'kapa', 'le'].includes(mnemonic)) {
+            const ops = splitComma(rest);
+            if (ops.length !== 3) throw new Error('Expected 3 operands');
+            const rd = parseRegister(ops[0]); const rs1 = parseRegister(ops[1]); const rs2 = parseRegister(ops[2]);
+            if (rd === null || rs1 === null || rs2 === null) throw new Error('Bad register operand');
+            word = encodeR(mnemonic, rd, rs1, rs2);
+          } else if (['eketsa', 'suthisa'].includes(mnemonic)) {
+            const ops = splitComma(rest);
+            if (ops.length !== 3) throw new Error('Expected 3 operands');
+            const rd = parseRegister(ops[0]); const rs1 = parseRegister(ops[1]);
+            let imm = parseImmediate(ops[2]);
+            if (imm === null) {
+              if (labels[ops[2]] !== undefined) imm = labels[ops[2]];
+              else throw new Error('Unknown immediate or label: ' + ops[2]);
+            }
+            if (rd === null || rs1 === null) throw new Error('Bad register operand');
+            word = encodeI(mnemonic, rd, rs1, imm);
+          } else if (mnemonic === 'bala') {
+            const ops = splitComma(rest);
+            if (ops.length !== 2) throw new Error('Expected 2 operands for bala');
+            const rd = parseRegister(ops[0]);
+            const mem = parseMemoryOperand(ops[1]);
+            if (rd === null || mem === null) throw new Error('Bad bala operand');
+            word = encodeI('bala', rd, mem.reg, mem.imm);
+          } else if (mnemonic === 'beha') {
+            const ops = splitComma(rest);
+            if (ops.length !== 2) throw new Error('Expected 2 operands for beha');
+            const rs2 = parseRegister(ops[0]);
+            const mem = parseMemoryOperand(ops[1]);
+            if (rs2 === null || mem === null) throw new Error('Bad beha operand');
+            word = encodeS('beha', rs2, mem.reg, mem.imm);
+          } else if (['lekanya', 'phapanyo'].includes(mnemonic)) {
+            const ops = splitComma(rest);
+            if (ops.length !== 3) throw new Error('Expected 3 operands');
+            const rs1 = parseRegister(ops[0]); const rs2 = parseRegister(ops[1]);
+            if (rs1 === null || rs2 === null) throw new Error('Bad branch register');
+            let target = parseImmediate(ops[2]);
+            if (target === null) {
+              if (labels[ops[2]] === undefined) throw new Error('Unknown branch target: ' + ops[2]);
+              target = labels[ops[2]] - pc;
+            }
+            word = encodeB(mnemonic, rs1, rs2, target);
+          } else {
+            throw new Error('Unsupported instruction: ' + mnemonic);
+          }
+
+          instructions.push({ address: pc, word, mnemonic });
+          pc += 4;
+        }
+
+        return instructions;
+      }
+
+      function renderInstructions(list) {
+        const node = document.getElementById('output');
+        node.innerHTML = '';
+        list.forEach((item) => {
+          const row = document.createElement('div');
+          row.className = 'instr';
+          row.innerHTML = `<span class="muted">${wordToHex(item.address)}</span><span class="ok">${wordToHex(item.word)}</span><span>${item.mnemonic.toUpperCase()}</span>`;
+          node.appendChild(row);
+        });
+      }
+
+      function renderRegisters() {
+        const tbody = document.getElementById('registers');
+        tbody.innerHTML = '';
+        for (let i = 0; i < 16; i++) {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>r${i}</td><td>0x00000000</td>`;
+          tbody.appendChild(row);
+        }
+      }
+
+      function renderMemory() {
+        const tbody = document.getElementById('memory');
+        tbody.innerHTML = '';
+        for (let i = 0; i < 8; i++) {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>0x${(i * 4).toString(16).padStart(6,'0').toUpperCase()}</td><td>0x00000000</td>`;
+          tbody.appendChild(row);
+        }
+      }
+
+      function assembleAndRender() {
+        const source = document.getElementById('source').value;
+        const box = document.getElementById('errors');
+
+        try {
+          const instructions = assembleProgram(source);
+          renderInstructions(instructions);
+          box.classList.remove('show');
+          box.textContent = '';
+        } catch (e) {
+          box.classList.add('show');
+          box.textContent = e.message;
+          document.getElementById('output').innerHTML = '';
+        }
+      }
+
+      document.getElementById('assembleBtn').addEventListener('click', assembleAndRender);
+      document.getElementById('loadDemoBtn').addEventListener('click', () => {
+        document.getElementById('source').value = defaults;
+        assembleAndRender();
+      });
+
+      renderRegisters();
+      renderMemory();
+      assembleAndRender();
+    </script>
+  </body>
+</html>
