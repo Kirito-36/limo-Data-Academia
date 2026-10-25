@@ -1,7 +1,7 @@
 #include "Memory.h"
 
 #include <algorithm>
-
+#include <stdexcept>
 namespace limo {
 
 Memory::Memory() : storage_(kMemorySize, 0u) {
