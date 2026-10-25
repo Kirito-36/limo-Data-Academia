@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LIMO pipeline simulator</title>
+<style>
+:root{--bg:#fbfbfd;--fg:#16192b;--mut:#5a5f78;--line:#cfd3e3;--card:#fff;--acc:#1f2a5c;--hi:#fde9c9;--ok:#dff3e4;--bad:#fbdcdc;--code:#f1f2f8}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#13151f;--fg:#e9ebf5;--mut:#a3a8c2;--line:#363b55;--card:#1b1e2d;--acc:#9fb0ff;--hi:#4a3a1c;--ok:#1d3a28;--bad:#4a2020;--code:#232639}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
+header{padding:14px 18px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:20px;color:var(--acc)}header p{margin:2px 0 0;color:var(--mut)}
+main{display:grid;grid-template-columns:minmax(300px,1fr) minmax(0,1.6fr);gap:14px;padding:14px 18px}@media(max-width:900px){main{grid-template-columns:1fr}}
+section{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:14px;overflow-x:auto}
+h2{margin:0 0 8px;font-size:15px;color:var(--acc)}
+textarea{width:100%;height:230px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--code);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:8px;resize:vertical}
+button,select{font:inherit;padding:5px 10px;border:1px solid var(--acc);background:var(--card);color:var(--fg);border-radius:4px;cursor:pointer}
+button.p{background:var(--acc);color:var(--bg)}button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid #e8a317;outline-offset:1px}
+.bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left;white-space:nowrap}th{color:var(--mut);font-weight:600}
+.m{font-family:ui-monospace,Menlo,Consolas,monospace}.err{background:var(--bad);padding:6px 8px;border-radius:4px;margin:6px 0}.hl{background:var(--hi);font-weight:700}
+.stages{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:6px}.st{border:1px solid var(--line);border-radius:4px;padding:6px;min-height:92px}.st b{color:var(--acc)}.st .i{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;margin:3px 0}.st small{display:block;color:var(--mut);font-size:11.5px}
+.warn{background:var(--hi);padding:6px 8px;border-radius:4px;margin:6px 0}.bub{color:var(--mut);font-style:italic}.f31{color:#b3261e}.f24{color:#7a3db8}.f19{color:#0b6e4f}.f14{color:#a05a00}.f11{color:#0a5aa8}.f6{color:var(--mut)}
+.cs{display:inline-block;min-width:34px;text-align:center;border-radius:3px;font-size:11.5px;padding:1px 2px}.IF{background:#d9e6ff;color:#102a5c}.ID{background:#e6dbff;color:#2c1559}.EX{background:#d6f1e0;color:#0d3b22}.MEM{background:#ffe6c4;color:#4a2a00}.WB{background:#f6d5e0;color:#541030}.X{background:var(--bad);color:var(--fg)}
+.log li{margin:2px 0}.stats span{margin-right:14px}label{margin-right:8px}
+</style></head><body>
+<header><h1>LIMO pipeline simulator</h1><p>Type a LIMO program, assemble it, then step it through IF, ID, EX, MEM and WB one clock cycle at a time.</p></header>
+<main><div>
+<section><h2>Program</h2>
+<div class="bar"><select id="ex" aria-label="Example program"></select><input type="file" id="file" accept=".limo,.txt" aria-label="Open a .limo file"></div>
+<textarea id="src" spellcheck="false" aria-label="LIMO source code"></textarea>
+<div class="bar"><button class="p" id="asm">Assemble and reset</button></div><div id="errs"></div></section>
+<section><h2>Machine code</h2><div id="listing"><span class="bub">Assemble a program to see its machine code.</span></div></section>
+<section><h2>Registers</h2><div id="regs"></div></section>
+<section><h2>Data memory (non-zero words)</h2><div id="mem"></div></section>
+</div><div>
+<section><h2>Controls</h2><div class="bar">
+<button id="step" class="p">Step</button><button id="back">Step back</button><button id="run">Run</button><button id="pause">Pause</button><button id="reset">Reset</button>
+<label>Speed <input type="range" id="spd" min="1" max="10" value="4"></label>
+<label><input type="checkbox" id="fwd" checked> Forwarding ON</label></div>
+<div class="stats m" id="stats"></div></section>
+<section><h2>Pipeline this cycle</h2><div class="stages" id="stages"></div></section>
+<section><h2>What happened this cycle</h2><ul class="log" id="log"></ul></section>
+<section><h2>Control signals</h2><div id="ctrl"></div></section>
+<section><h2>Pipeline chart</h2><div id="chart"></div></section>
+</div></main>
+<script src="src/limo-core.js"></script>
+<script src="src/ui.js"></script>
+</body></html>
