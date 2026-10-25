@@ -1,6 +1,7 @@
 #include "RegisterFile.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace limo {
 
