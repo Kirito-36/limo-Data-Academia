@@ -19,6 +19,8 @@ set(LIMO_SOURCES
   src/Memory.cpp
   src/InstructionDecoder.cpp
   src/ALU.cpp
+  src/ControlUnit.cpp
+  src/Pipeline.cpp
   src/CPU.cpp
 )
 add_library(limo STATIC ${LIMO_SOURCES})
@@ -33,6 +35,9 @@ target_link_libraries(register_memory_test PRIVATE limo)
 add_executable(m1_instruction_test src/tests/M1InstructionSmokeTest.cpp)
 target_link_libraries(m1_instruction_test PRIVATE limo)
 
+add_executable(pipeline_test src/tests/PipelineSmokeTest.cpp)
+target_link_libraries(pipeline_test PRIVATE limo)
+
 # Optional: an instruction execution smoke test if present
 if(EXISTS "${PROJECT_SOURCE_DIR}/src/tests/InstructionExecutionSmokeTest.cpp")
   add_executable(instr_exec_test src/tests/InstructionExecutionSmokeTest.cpp)
@@ -43,6 +48,7 @@ endif()
 enable_testing()
 add_test(NAME register_memory_test COMMAND register_memory_test)
 add_test(NAME m1_instruction_test COMMAND m1_instruction_test)
+add_test(NAME pipeline_test COMMAND pipeline_test)
 
 # Install rules (optional)
 install(TARGETS limo
