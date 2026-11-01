@@ -48,7 +48,7 @@ bool CPU::step() {
     }
 
     switch (decoded.type) {
-    case DecodedInstruction::Type::R: {
+    case Type::R: {
         const std::uint32_t rs1 = registers_.read(decoded.rs1);
         const std::uint32_t rs2 = registers_.read(decoded.rs2);
         const std::uint32_t result = ALU::executeR(decoded.funct3, decoded.funct7, rs1, rs2);
@@ -58,16 +58,19 @@ bool CPU::step() {
         pc_ += 4u;
         return true;
     }
-    case DecodedInstruction::Type::I: {
+    case Type::I: {
         const std::uint32_t rs1 = registers_.read(decoded.rs1);
-        const std::uint32_t result = ALU::executeI(decoded.funct3, rs1, decoded.immI);
+        const std::uint32_t result =
+            (decoded.mnemonic == M1Mnemonic::BALA)
+                ? memory_.loadWord(rs1 + static_cast<std::uint32_t>(decoded.immI))  // bala: load word
+                : ALU::executeI(decoded.funct3, rs1, decoded.immI);
         if (decoded.rd != 0u) {
             registers_.write(decoded.rd, result);
         }
         pc_ += 4u;
         return true;
     }
-    case DecodedInstruction::Type::S: {
+    case Type::S: {
         const std::uint32_t rs1 = registers_.read(decoded.rs1);
         const std::uint32_t rs2 = registers_.read(decoded.rs2);
         const std::uint32_t address = rs1 + static_cast<std::uint32_t>(decoded.immS);
@@ -75,7 +78,7 @@ bool CPU::step() {
         pc_ += 4u;
         return true;
     }
-    case DecodedInstruction::Type::B: {
+    case Type::B: {
         const std::uint32_t rs1 = registers_.read(decoded.rs1);
         const std::uint32_t rs2 = registers_.read(decoded.rs2);
         const bool takeBranch = ALU::executeBranch(decoded.funct3, rs1, rs2);
