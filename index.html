@@ -1,374 +1,414 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LIMO M1 Assembler</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>limo-Data-Academia - RISC-V Pipeline Simulator</title>
     <style>
-      :root {
-        --bg: #0a1720;
-        --panel: #122b39;
-        --panel-2: #173b4e;
-        --accent: #5dc4ff;
-        --text: #ebf7ff;
-        --muted: #a9d0df;
-        --error: #ff7b7b;
-        --ok: #7ff0c2;
-        --border: #1d4661;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: Segoe UI, sans-serif;
-        background: linear-gradient(180deg, #06141d, #0a1720 35%, #101f2a 100%);
-        color: var(--text);
-      }
-      .wrap {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 24px;
-      }
-      header { margin-bottom: 20px; }
-      .eyebrow {
-        margin: 0 0 8px 0;
-        font-size: 0.75rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--muted);
-      }
-      h1 { margin: 0; }
-      .grid {
-        display: grid;
-        grid-template-columns: 1.4fr 1fr;
-        gap: 20px;
-      }
-      .panel {
-        background: rgba(18, 43, 57, 0.96);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 8px 18px rgba(0,0,0,0.22);
-      }
-      textarea {
-        width: 100%;
-        min-height: 300px;
-        background: rgba(7, 20, 28, 0.85);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        color: var(--text);
-        padding: 12px;
-        resize: vertical;
-        font-family: Consolas, monospace;
-        font-size: 0.96rem;
-      }
-      .buttons {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 14px;
-      }
-      button {
-        background: var(--accent);
-        color: #072231;
-        border: none;
-        border-radius: 10px;
-        padding: 10px 16px;
-        font-weight: 700;
-        cursor: pointer;
-      }
-      button.secondary {
-        background: rgba(93,196,255,0.12);
-        color: var(--text);
-        border: 1px solid var(--border);
-      }
-      #output, #errors { margin-top: 16px; }
-      .error-box {
-        display: none;
-        padding: 12px 14px;
-        color: #fff;
-        background: rgba(255,123,123,0.08);
-        border: 1px solid rgba(255,123,123,0.5);
-        border-radius: 10px;
-      }
-      .error-box.show { display: block; }
-      .instructions { display: flex; flex-direction: column; gap: 8px; }
-      .instr {
-        display: grid;
-        grid-template-columns: 75px 120px 1fr;
-        gap: 12px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: rgba(255,255,255,0.02);
-        padding: 10px 12px;
-        font-family: Consolas, monospace;
-      }
-      .muted { color: var(--muted); }
-      .ok { color: var(--ok); }
-      .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-      table { width: 100%; border-collapse: collapse; font-family: Consolas, monospace; }
-      th, td { border-bottom: 1px solid var(--border); padding: 8px 10px; text-align: left; }
-      th { color: var(--muted); }
-      .full { grid-column: 1 / -1; }
-      @media (max-width: 900px) {
-        .grid, .status-row { grid-template-columns: 1fr; }
-      }
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --accent-color: #238636;
+            --accent-hover: #2ea043;
+            --danger-color: #da3633;
+            --warning-color: #d29922;
+            --stage-if: #1f6feb;
+            --stage-id: #8957e5;
+            --stage-ex: #d29922;
+            --stage-mem: #238636;
+            --stage-wb: #f85149;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
+        h1 { font-size: 1.5rem; color: #f0f6fc; }
+        .badge { background: #388bfd26; color: #58a6ff; padding: 4px 8px; border-radius: 12px; font-size: 0.85rem; border: 1px solid #388bfd66; }
+        
+        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 1200px) { .grid-container { grid-template-columns: 1fr; } }
+        
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; margin-bottom: 20px; }
+        .card h2 { font-size: 1.1rem; margin-bottom: 10px; color: #f0f6fc; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        
+        /* Control Panel (Issue #16) */
+        .control-panel { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px; }
+        button { background-color: var(--accent-color); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+        button:hover { background-color: var(--accent-hover); }
+        button.danger { background-color: var(--danger-color); }
+        button.danger:hover { background-color: #b62324; }
+        button.warning { background-color: #9e6a03; }
+        button.warning:hover { background-color: #bb8009; }
+        .speed-control { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        
+        /* Editor & Assembler (Issue #17) */
+        textarea { width: 100%; height: 160px; background-color: #0d1117; color: #58a6ff; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.9rem; resize: vertical; }
+        
+        /* Pipeline Stages */
+        .pipeline-stages { display: flex; flex-direction: column; gap: 10px; }
+        .stage-box { border-left: 4px solid var(--border-color); background: #0d1117; padding: 10px; border-radius: 4px; font-size: 0.9rem; }
+        .stage-if { border-left-color: var(--stage-if); }
+        .stage-id { border-left-color: var(--stage-id); }
+        .stage-ex { border-left-color: var(--stage-ex); }
+        .stage-mem { border-left-color: var(--stage-mem); }
+        .stage-wb { border-left-color: var(--stage-wb); }
+        .stage-title { font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        
+        /* Tables & Registers */
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { border: 1px solid var(--border-color); padding: 6px 8px; text-align: left; }
+        th { background-color: #21262d; color: #f0f6fc; }
+        .register-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; max-height: 220px; overflow-y: auto; }
+        .reg-cell { background: #0d1117; border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-family: monospace; }
+        .console-output { background: #0d1117; color: #3fb950; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; height: 100px; overflow-y: auto; border: 1px solid var(--border-color); }
     </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <header>
-        <p class="eyebrow">CS3520 · Team Data-Academia</p>
-        <h1>LIMO M1 Assembler and Simulator</h1>
-      </header>
+</head>
+<body>
 
-      <div class="grid">
-        <section class="panel">
-          <h2>Assembly editor</h2>
-          <textarea id="source" spellcheck="false">eketsa r3, r1, 5
-kopanya r5, r3, r1
-bala r4, 4(r1)
-beha r2, 8(r1)
-lekanya r1, r2, +8</textarea>
-          <div class="buttons">
-            <button id="assembleBtn">Assemble</button>
-            <button id="loadDemoBtn" class="secondary">Load demo</button>
-          </div>
-          <div id="errors" class="error-box"></div>
-        </section>
+    <header>
+        <h1>limo-Data-Academia 🚀 <span style="font-size: 1rem; font-weight: normal; color: #8b949e;">RISC-V Pipeline Simulator</span></h1>
+        <div class="badge">Milestone M3: Pipeline Core & UI</div>
+    </header>
 
-        <section class="panel">
-          <h2>Assembled machine instructions</h2>
-          <div id="output" class="instructions"></div>
-        </section>
-
-        <section class="panel full">
-          <h2>Register and memory display</h2>
-          <div class="status-row">
-            <div>
-              <h3>Registers</h3>
-              <table>
-                <thead><tr><th>Reg</th><th>Value</th></tr></thead>
-                <tbody id="registers"></tbody>
-              </table>
+    <div class="grid-container">
+        <!-- Left Column: Assembler & Controls -->
+        <div>
+            <!-- Issue #17: Assembler & Program Loader -->
+            <div class="card">
+                <h2>1. RISC-V Assembler & Code Editor (Issue #17)</h2>
+                <p style="font-size: 0.85rem; margin-bottom: 8px; color: #8b949e;">Write or paste RISC-V assembly instructions below and click <strong>Assemble & Load</strong>.</p>
+                <textarea id="assemblyCode"># Sample RISC-V Assembly Program
+addi x1, x0, 10
+addi x2, x0, 20
+add  x3, x1, x2
+sw   x3, 0(x0)
+lw   x4, 0(x0)</textarea>
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <button onclick="assembleAndLoadCode()">Assemble & Load Code</button>
+                    <button class="warning" onclick="loadDefaultProgram()">Load Fibonacci Sample</button>
+                </div>
             </div>
-            <div>
-              <h3>Memory</h3>
-              <table>
-                <thead><tr><th>Addr</th><th>Word</th></tr></thead>
-                <tbody id="memory"></tbody>
-              </table>
+
+            <!-- Issue #16: Interactive Step, Run, Reset Controls -->
+            <div class="card">
+                <h2>2. Simulation Control Panel (Issue #16)</h2>
+                <div class="control-panel">
+                    <button onclick="stepSimulation()">▶ Step (1 Cycle)</button>
+                    <button id="runBtn" class="warning" onclick="toggleRunSimulation()">🔁 Run / Pause</button>
+                    <button class="danger" onclick="resetSimulation()">🔄 Reset</button>
+                    <div class="speed-control">
+                        <label for="speedRange">Speed:</label>
+                        <input type="range" id="speedRange" min="100" max="2000" step="100" value="800">
+                        <span id="speedVal">800ms</span>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; background: #0d1117; padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <span>Clock Cycle: <strong id="cycleCount" style="color: #58a6ff;">0</strong></span>
+                    <span>Program Counter (PC): <strong id="pcVal" style="color: #d29922;">0x00000000</strong></span>
+                    <span>Status: <strong id="simStatus" style="color: #3fb950;">Ready</strong></span>
+                </div>
             </div>
-          </div>
-        </section>
-      </div>
+
+            <!-- Console Log -->
+            <div class="card">
+                <h2>Simulation Log / Console</h2>
+                <div id="consoleLog" class="console-output">Simulator initialized. Ready to assemble and execute.</div>
+            </div>
+        </div>
+
+        <!-- Right Column: Pipeline State & Hardware View -->
+        <div>
+            <!-- Pipeline Stages Visualization -->
+            <div class="card">
+                <h2>3. 5-Stage Pipeline Registers</h2>
+                <div class="pipeline-stages">
+                    <div class="stage-box stage-if">
+                        <div class="stage-title"><span>Instruction Fetch (IF)</span><span id="ifInstr" style="color: #58a6ff;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="ifDetails">PC: 0x00000000</div>
+                    </div>
+                    <div class="stage-box stage-id">
+                        <div class="stage-title"><span>Instruction Decode / Register Read (ID)</span><span id="idInstr" style="color: #8b949e;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="idDetails">Control Signals: -</div>
+                    </div>
+                    <div class="stage-box stage-ex">
+                        <div class="stage-title"><span>Execution / ALU (EX)</span><span id="exInstr" style="color: #d29922;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="exDetails">ALU Result: 0</div>
+                    </div>
+                    <div class="stage-box stage-mem">
+                        <div class="stage-title"><span>Memory Access (MEM)</span><span id="memInstr" style="color: #3fb950;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="memDetails">Memory Address / Data: -</div>
+                    </div>
+                    <div class="stage-box stage-wb">
+                        <div class="stage-title"><span>Write Back (WB)</span><span id="wbInstr" style="color: #f85149;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="wbDetails">Destination Reg: -</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Register File State -->
+            <div class="card">
+                <h2>4. Register File (x0 - x31)</h2>
+                <div id="registerGrid" class="register-grid"></div>
+            </div>
+
+            <!-- Data Memory Inspector -->
+            <div class="card">
+                <h2>5. Data Memory (RAM)</h2>
+                <table id="memoryTable">
+                    <thead>
+                        <tr><th>Address</th><th>Hex Value</th><th>Decimal</th></tr>
+                    </thead>
+                    <tbody id="memoryBody">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
-      const defaults = `eketsa r3, r1, 5
-kopanya r5, r3, r1
-bala r4, 4(r1)
-beha r2, 8(r1)
-lekanya r1, r2, +8`;
+        // Simulator State
+        let state = {
+            pc: 0,
+            cycles: 0,
+            isRunning: false,
+            runInterval: null,
+            instructions: [],
+            registers: new Int32Array(32),
+            memory: new Int32Array(64), // 256 bytes of data memory
+            pipeline: {
+                if: { pc: 0, instr: "NOP", raw: 0 },
+                id: { pc: 0, instr: "NOP", rs1: 0, rs2: 0, rd: 0, imm: 0, aluOp: "" },
+                ex: { pc: 0, instr: "NOP", aluResult: 0, rd: 0 },
+                mem: { pc: 0, instr: "NOP", memData: 0, rd: 0 },
+                wb: { pc: 0, instr: "NOP", writeVal: 0, rd: 0 }
+            }
+        };
 
-      function stripComment(line) { return line.split(/[#;]/)[0].trim(); }
-      function parseRegister(token) {
-        const t = token.trim();
-        const m = t.match(/^x?(\d+)$/i);
-        if (!m) return null;
-        const n = Number(m[1]);
-        return n >= 0 && n < 32 ? n : null;
-      }
-      function parseImmediate(token) {
-        const t = token.trim();
-        if (!t) return null;
-        if (/^[-+]?0x[0-9a-f]+$/i.test(t)) return parseInt(t, 16);
-        if (/^[-+]?0b[01]+$/i.test(t)) return parseInt(t, 2);
-        if (/^[-+]?\d+$/.test(t)) return parseInt(t, 10);
-        return null;
-      }
-      function parseMemoryOperand(text) {
-        const match = text.trim().match(/^([-+]?0x[0-9a-f]+|[-+]?0b[01]+|[-+]?\d+|[A-Za-z_][A-Za-z0-9_]*)\s*\(\s*(x?\d+)\s*\)$/i);
-        if (!match) return null;
-        const imm = parseImmediate(match[1]);
-        const reg = parseRegister(match[2]);
-        if (imm === null || reg === null) return null;
-        return { imm, reg };
-      }
-      function splitComma(parts) { return parts.split(',').map((p) => p.trim()).filter(Boolean); }
-      function wordToHex(value) { return '0x' + (value >>> 0).toString(16).toUpperCase().padStart(8, '0'); }
-      function encodeR(mnemonic, rd, rs1, rs2) {
-        let funct3 = 0, funct7 = 0;
-        if (mnemonic === 'kopanya') { funct3 = 0x0; funct7 = 0x00; }
-        else if (mnemonic === 'tlosa') { funct3 = 0x0; funct7 = 0x20; }
-        else if (mnemonic === 'kapa') { funct3 = 0x6; funct7 = 0x00; }
-        else if (mnemonic === 'le') { funct3 = 0x7; funct7 = 0x00; }
-        else throw new Error('Unsupported R type');
-        return ((funct7 << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (rd << 7) | 0x33) >>> 0;
-      }
-      function encodeI(mnemonic, rd, rs1, imm) {
-        if (mnemonic === 'eketsa') return ((imm & 0xfff) << 20 | (rs1 << 15) | (0x0 << 12) | (rd << 7) | 0x13) >>> 0;
-        if (mnemonic === 'suthisa') { if (imm < 0 || imm > 31) throw new Error('Shift amount must be in [0,31]'); return ((imm & 0x1f) << 20 | (rs1 << 15) | (0x1 << 12) | (rd << 7) | 0x13) >>> 0; }
-        if (mnemonic === 'bala') return ((imm & 0xfff) << 20 | (rs1 << 15) | (0x2 << 12) | (rd << 7) | 0x03) >>> 0;
-        throw new Error('Unsupported I type');
-      }
-      function encodeS(mnemonic, rs2, rs1, imm) {
-        if (mnemonic !== 'beha') throw new Error('Unsupported S type');
-        const upper = (imm >> 5) & 0x7f;
-        const lower = imm & 0x1f;
-        return ((upper << 25) | (rs2 << 20) | (rs1 << 15) | (0x2 << 12) | (lower << 7) | 0x23) >>> 0;
-      }
-      function encodeB(mnemonic, rs1, rs2, offset) {
-        if (offset % 4 !== 0) throw new Error('Branch offset must be multiple of 4');
-        const imm = offset & 0x1fff;
-        const imm12 = (imm >> 12) & 1;
-        const imm11 = (imm >> 11) & 1;
-        const imm10_5 = (imm >> 5) & 0x3f;
-        const imm4_1 = (imm >> 1) & 0xf;
-        const funct3 = mnemonic === 'lekanya' ? 0x0 : 0x1;
-        return ((imm12 << 31) | (imm10_5 << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (imm4_1 << 8) | (imm11 << 7) | 0x63) >>> 0;
-      }
-      function assembleProgram(source) {
-        const lines = source.split('\n');
-        const labels = {};
-        let pc = 0;
-
-        for (const raw of lines) {
-          const line = stripComment(raw);
-          if (!line) continue;
-          if (/^\s*[A-Za-z_][A-Za-z0-9_]*\s*:\s*$/.test(line)) {
-            const name = line.replace(/:$/, '').trim();
-            labels[name] = pc;
-            continue;
-          }
-          const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)/);
-          if (!match) continue;
-          pc += 4;
+        function log(msg) {
+            const consoleBox = document.getElementById("consoleLog");
+            consoleBox.innerHTML += `<div>[Cycle ${state.cycles}] ${msg}</div>`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
         }
 
-        const instructions = [];
-        pc = 0;
-
-        for (const raw of lines) {
-          const line = stripComment(raw);
-          if (!line) continue;
-          if (/^\s*[A-Za-z_][A-Za-z0-9_]*\s*:\s*$/.test(line)) continue;
-
-          const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s+(.*)$/);
-          if (!match) throw new Error('Unable to parse line: ' + line);
-
-          const mnemonic = match[1].toLowerCase();
-          const rest = match[2].trim();
-          let word = 0;
-
-          if (['kopanya', 'tlosa', 'kapa', 'le'].includes(mnemonic)) {
-            const ops = splitComma(rest);
-            if (ops.length !== 3) throw new Error('Expected 3 operands');
-            const rd = parseRegister(ops[0]); const rs1 = parseRegister(ops[1]); const rs2 = parseRegister(ops[2]);
-            if (rd === null || rs1 === null || rs2 === null) throw new Error('Bad register operand');
-            word = encodeR(mnemonic, rd, rs1, rs2);
-          } else if (['eketsa', 'suthisa'].includes(mnemonic)) {
-            const ops = splitComma(rest);
-            if (ops.length !== 3) throw new Error('Expected 3 operands');
-            const rd = parseRegister(ops[0]); const rs1 = parseRegister(ops[1]);
-            let imm = parseImmediate(ops[2]);
-            if (imm === null) {
-              if (labels[ops[2]] !== undefined) imm = labels[ops[2]];
-              else throw new Error('Unknown immediate or label: ' + ops[2]);
+        // Initialize UI
+        function initUI() {
+            const regGrid = document.getElementById("registerGrid");
+            regGrid.innerHTML = "";
+            for (let i = 0; i < 32; i++) {
+                regGrid.innerHTML += `<div class="reg-cell"><strong>x${i}</strong> (r${i}): <span id="reg_${i}">0</span></div>`;
             }
-            if (rd === null || rs1 === null) throw new Error('Bad register operand');
-            word = encodeI(mnemonic, rd, rs1, imm);
-          } else if (mnemonic === 'bala') {
-            const ops = splitComma(rest);
-            if (ops.length !== 2) throw new Error('Expected 2 operands for bala');
-            const rd = parseRegister(ops[0]);
-            const mem = parseMemoryOperand(ops[1]);
-            if (rd === null || mem === null) throw new Error('Bad bala operand');
-            word = encodeI('bala', rd, mem.reg, mem.imm);
-          } else if (mnemonic === 'beha') {
-            const ops = splitComma(rest);
-            if (ops.length !== 2) throw new Error('Expected 2 operands for beha');
-            const rs2 = parseRegister(ops[0]);
-            const mem = parseMemoryOperand(ops[1]);
-            if (rs2 === null || mem === null) throw new Error('Bad beha operand');
-            word = encodeS('beha', rs2, mem.reg, mem.imm);
-          } else if (['lekanya', 'phapanyo'].includes(mnemonic)) {
-            const ops = splitComma(rest);
-            if (ops.length !== 3) throw new Error('Expected 3 operands');
-            const rs1 = parseRegister(ops[0]); const rs2 = parseRegister(ops[1]);
-            if (rs1 === null || rs2 === null) throw new Error('Bad branch register');
-            let target = parseImmediate(ops[2]);
-            if (target === null) {
-              if (labels[ops[2]] === undefined) throw new Error('Unknown branch target: ' + ops[2]);
-              target = labels[ops[2]] - pc;
-            }
-            word = encodeB(mnemonic, rs1, rs2, target);
-          } else {
-            throw new Error('Unsupported instruction: ' + mnemonic);
-          }
-
-          instructions.push({ address: pc, word, mnemonic });
-          pc += 4;
+            updateMemoryTable();
+            updateRegisterDisplay();
         }
 
-        return instructions;
-      }
+        function updateRegisterDisplay() {
+            for (let i = 0; i < 32; i++) {
+                const el = document.getElementById(`reg_${i}`);
+                if (el) el.innerText = state.registers[i];
+            }
+            state.registers[0] = 0; // x0 is hardwired to 0
+        }
 
-      function renderInstructions(list) {
-        const node = document.getElementById('output');
-        node.innerHTML = '';
-        list.forEach((item) => {
-          const row = document.createElement('div');
-          row.className = 'instr';
-          row.innerHTML = `<span class="muted">${wordToHex(item.address)}</span><span class="ok">${wordToHex(item.word)}</span><span>${item.mnemonic.toUpperCase()}</span>`;
-          node.appendChild(row);
+        function updateMemoryTable() {
+            const memBody = document.getElementById("memoryBody");
+            memBody.innerHTML = "";
+            for (let i = 0; i < 16; i++) {
+                const val = state.memory[i];
+                memBody.innerHTML += `<tr><td>0x${(i * 4).toString(16).padStart(4, '0')}</td><td>0x${val.toString(16).padStart(8, '0')}</td><td>${val}</td></tr>`;
+            }
+        }
+
+        // Issue #17: Assembler Implementation
+        function assembleAndLoadCode() {
+            const codeText = document.getElementById("assemblyCode").value;
+            const lines = codeText.split('\n');
+            state.instructions = [];
+            
+            for (let line of lines) {
+                line = line.split('#')[0].trim(); // Remove comments
+                if (!line) continue;
+                
+                // Parse instruction format e.g., addi x1, x0, 10
+                const parts = line.replace(/,/g, ' ').split(/\s+/);
+                state.instructions.push({ rawLine: line, parts: parts });
+            }
+
+            resetSimulation();
+            log(`Successfully assembled ${state.instructions.length} instructions.`);
+            document.getElementById("simStatus").innerText = "Loaded & Ready";
+        }
+
+        function loadDefaultProgram() {
+            document.getElementById("assemblyCode").value = 
+`# Fibonacci / Arithmetic Sample
+addi x1, x0, 5
+addi x2, x0, 10
+add  x3, x1, x2
+sw   x3, 0(x0)
+lw   x4, 0(x0)
+addi x5, x4, 15`;
+            assembleAndLoadCode();
+        }
+
+        // Issue #16: Control Functions (Step, Run, Reset)
+        function resetSimulation() {
+            if (state.isRunning) toggleRunSimulation();
+            state.pc = 0;
+            state.cycles = 0;
+            state.registers.fill(0);
+            state.memory.fill(0);
+            state.pipeline = {
+                if: { pc: 0, instr: "NOP", raw: 0 },
+                id: { pc: 0, instr: "NOP", rs1: 0, rs2: 0, rd: 0, imm: 0 },
+                ex: { pc: 0, instr: "NOP", aluResult: 0, rd: 0 },
+                mem: { pc: 0, instr: "NOP", memData: 0, rd: 0 },
+                wb: { pc: 0, instr: "NOP", writeVal: 0, rd: 0 }
+            };
+            document.getElementById("cycleCount").innerText = "0";
+            document.getElementById("pcVal").innerText = "0x00000000";
+            document.getElementById("simStatus").innerText = "Reset";
+            updatePipelineUI();
+            updateRegisterDisplay();
+            updateMemoryTable();
+            log("Simulator reset.");
+        }
+
+        function stepSimulation() {
+            if (state.instructions.length === 0) {
+                alert("Please assemble and load code first!");
+                return;
+            }
+
+            state.cycles++;
+
+            // 1. WB Stage
+            let wbInst = state.pipeline.mem;
+            if (wbInst && wbInst.rd && wbInst.rd !== 0) {
+                state.registers[wbInst.rd] = wbInst.writeVal;
+            }
+            state.pipeline.wb = wbInst;
+
+            // 2. MEM Stage
+            let memInst = state.pipeline.ex;
+            let memVal = 0;
+            if (memInst.opcode === 'lw') {
+                let addr = (memInst.aluResult / 4) & 63;
+                memVal = state.memory[addr];
+                memInst.writeVal = memVal;
+            } else if (memInst.opcode === 'sw') {
+                let addr = (memInst.aluResult / 4) & 63;
+                state.memory[addr] = state.registers[memInst.rs2 || 0];
+                memInst.writeVal = 0;
+            } else {
+                memInst.writeVal = memInst.aluResult;
+            }
+            state.pipeline.mem = memInst;
+
+            // 3. EX Stage
+            let exInst = state.pipeline.id;
+            let aluRes = 0;
+            if (exInst.opcode === 'add') {
+                aluRes = state.registers[exInst.rs1] + state.registers[exInst.rs2];
+            } else if (exInst.opcode === 'sub') {
+                aluRes = state.registers[exInst.rs1] - state.registers[exInst.rs2];
+            } else if (exInst.opcode === 'addi') {
+                aluRes = state.registers[exInst.rs1] + exInst.imm;
+            } else if (exInst.opcode === 'lw' || exInst.opcode === 'sw') {
+                aluRes = state.registers[exInst.rs1] + exInst.imm;
+            }
+            exInst.aluResult = aluRes;
+            exInst.writeVal = aluRes;
+            state.pipeline.ex = exInst;
+
+            // 4. ID Stage
+            let idInst = state.pipeline.if;
+            if (idInst.pc < state.instructions.length) {
+                let parsed = state.instructions[idInst.pc];
+                idInst.opcode = parsed.parts[0];
+                idInst.rd = parseReg(parsed.parts[1]);
+                idInst.rs1 = parseReg(parsed.parts[2]);
+                idInst.rs2 = parseReg(parsed.parts[3]);
+                if (!idInst.rs2 && parsed.parts[3]) {
+                    // Immediate case e.g., addi x1, x0, 10 or lw x4, 0(x0)
+                    idInst.imm = parseInt(parsed.parts[3]) || 0;
+                }
+                idInst.instr = parsed.rawLine;
+            } else {
+                idInst.opcode = 'NOP';
+                idInst.instr = 'NOP';
+                idInst.rd = 0;
+            }
+            state.pipeline.id = idInst;
+
+            // 5. IF Stage
+            let ifInst = { pc: state.pc, instr: "NOP" };
+            if (state.pc < state.instructions.length) {
+                ifInst.instr = state.instructions[state.pc].rawLine;
+                state.pc++;
+            } else {
+                ifInst.instr = "NOP (End)";
+            }
+            state.pipeline.if = ifInst;
+
+            // Update UI
+            document.getElementById("cycleCount").innerText = state.cycles;
+            document.getElementById("pcVal").innerText = `0x${((state.pc - 1) * 4).toString(16).padStart(8, '0')}`;
+            document.getElementById("simStatus").innerText = "Running";
+            
+            updatePipelineUI();
+            updateRegisterDisplay();
+            updateMemoryTable();
+            log(`Executed cycle ${state.cycles}`);
+        }
+
+        function parseReg(regStr) {
+            if (!regStr) return 0;
+            let match = regStr.match(/x(\d+)/);
+            return match ? parseInt(match[1]) : 0;
+        }
+
+        function updatePipelineUI() {
+            document.getElementById("ifInstr").innerText = state.pipeline.if.instr;
+            document.getElementById("idInstr").innerText = state.pipeline.id.instr;
+            document.getElementById("exInstr").innerText = state.pipeline.ex.instr;
+            document.getElementById("memInstr").innerText = state.pipeline.mem.instr;
+            document.getElementById("wbInstr").innerText = state.pipeline.wb.instr;
+        }
+
+        function toggleRunSimulation() {
+            const btn = document.getElementById("runBtn");
+            const speed = parseInt(document.getElementById("speedRange").value);
+            
+            if (state.isRunning) {
+                clearInterval(state.runInterval);
+                state.isRunning = false;
+                btn.innerText = "🔁 Run / Pause";
+                btn.className = "warning";
+                document.getElementById("simStatus").innerText = "Paused";
+            } else {
+                state.isRunning = true;
+                btn.innerText = "⏸ Pause";
+                btn.className = "danger";
+                state.runInterval = setInterval(() => {
+                    stepSimulation();
+                }, speed);
+            }
+        }
+
+        document.getElementById("speedRange").addEventListener("input", (e) => {
+            document.getElementById("speedVal").innerText = e.target.value + "ms";
+            if (state.isRunning) {
+                toggleRunSimulation();
+                toggleRunSimulation();
+            }
         });
-      }
 
-      function renderRegisters() {
-        const tbody = document.getElementById('registers');
-        tbody.innerHTML = '';
-        for (let i = 0; i < 16; i++) {
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>r${i}</td><td>0x00000000</td>`;
-          tbody.appendChild(row);
-        }
-      }
-
-      function renderMemory() {
-        const tbody = document.getElementById('memory');
-        tbody.innerHTML = '';
-        for (let i = 0; i < 8; i++) {
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>0x${(i * 4).toString(16).padStart(6,'0').toUpperCase()}</td><td>0x00000000</td>`;
-          tbody.appendChild(row);
-        }
-      }
-
-      function assembleAndRender() {
-        const source = document.getElementById('source').value;
-        const box = document.getElementById('errors');
-
-        try {
-          const instructions = assembleProgram(source);
-          renderInstructions(instructions);
-          box.classList.remove('show');
-          box.textContent = '';
-        } catch (e) {
-          box.classList.add('show');
-          box.textContent = e.message;
-          document.getElementById('output').innerHTML = '';
-        }
-      }
-
-      document.getElementById('assembleBtn').addEventListener('click', assembleAndRender);
-      document.getElementById('loadDemoBtn').addEventListener('click', () => {
-        document.getElementById('source').value = defaults;
-        assembleAndRender();
-      });
-
-      renderRegisters();
-      renderMemory();
-      assembleAndRender();
+        window.onload = () => {
+            initUI();
+            loadDefaultProgram();
+        };
     </script>
-  </body>
+</body>
 </html>
