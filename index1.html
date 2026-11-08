@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>limo-Data-Academia - LIMO RISC-V Pipeline Simulator</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --accent-color: #238636;
+            --accent-hover: #2ea043;
+            --danger-color: #da3633;
+            --warning-color: #d29922;
+            --stage-if: #1f6feb;
+            --stage-id: #8957e5;
+            --stage-ex: #d29922;
+            --stage-mem: #238636;
+            --stage-wb: #f85149;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
+        h1 { font-size: 1.5rem; color: #f0f6fc; }
+        .badge { background: #388bfd26; color: #58a6ff; padding: 4px 8px; border-radius: 12px; font-size: 0.85rem; border: 1px solid #388bfd66; }
+        
+        .grid-container { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; }
+        @media (max-width: 1200px) { .grid-container { grid-template-columns: 1fr; } }
+        
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; margin-bottom: 20px; }
+        .card h2 { font-size: 1.1rem; margin-bottom: 10px; color: #f0f6fc; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        
+        /* Control Panel (Issue #16) */
+        .control-panel { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px; }
+        button { background-color: var(--accent-color); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+        button:hover { background-color: var(--accent-hover); }
+        button.danger { background-color: var(--danger-color); }
+        button.danger:hover { background-color: #b62324; }
+        button.warning { background-color: #9e6a03; }
+        button.warning:hover { background-color: #bb8009; }
+        .speed-control { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        
+        /* Assembler (Issue #17 & M1 Spec) */
+        textarea { width: 100%; height: 160px; background-color: #0d1117; color: #58a6ff; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.9rem; resize: vertical; }
+        
+        /* Pipeline Stages */
+        .pipeline-stages { display: flex; flex-direction: column; gap: 10px; }
+        .stage-box { border-left: 4px solid var(--border-color); background: #0d1117; padding: 10px; border-radius: 4px; font-size: 0.9rem; }
+        .stage-if { border-left-color: var(--stage-if); }
+        .stage-id { border-left-color: var(--stage-id); }
+        .stage-ex { border-left-color: var(--stage-ex); }
+        .stage-mem { border-left-color: var(--stage-mem); }
+        .stage-wb { border-left-color: var(--stage-wb); }
+        .stage-title { font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        
+        /* Tables & Registers */
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { border: 1px solid var(--border-color); padding: 6px 8px; text-align: left; }
+        th { background-color: #21262d; color: #f0f6fc; }
+        .register-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 6px; max-height: 250px; overflow-y: auto; }
+        .reg-cell { background: #0d1117; border: 1px solid var(--border-color); padding: 5px 8px; border-radius: 4px; font-size: 0.78rem; font-family: monospace; }
+        .console-output { background: #0d1117; color: #3fb950; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; height: 110px; overflow-y: auto; border: 1px solid var(--border-color); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>limo-Data-Academia 🚀 <span style="font-size: 1rem; font-weight: normal; color: #8b949e;">LIMO Sesotho RISC-V Pipeline Simulator</span></h1>
+        <div class="badge">Milestone M3: Pipeline Core & LIMO ISA</div>
+    </header>
+
+    <div class="grid-container">
+        <!-- Left Column: LIMO Assembler & Controls -->
+        <div>
+            <!-- LIMO Assembler (Issue #17 & M1 Spec) -->
+            <div class="card">
+                <h2>1. LIMO Sesotho Assembler (Issue #17)</h2>
+                <p style="font-size: 0.85rem; margin-bottom: 8px; color: #8b949e;">Write or paste LIMO assembly instructions using Sesotho mnemonics (e.g., <code>eketsa</code>, <code>tlosa</code>, <code>kenya</code>, <code>boloka</code>).</p>
+                <textarea id="assemblyCode"># LIMO Sample Program (Arithmetic & Memory)
+eketsaI x3, x0, 10
+eketsaI x4, x0, 20
+eketsa  x5, x3, x4
+boloka  x5, 0(x0)
+kenya   x6, 0(x0)</textarea>
+                <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="assembleAndLoadCode()">Assemble & Load LIMO Code</button>
+                    <button class="warning" onclick="loadSampleProgram(1)">Load Sample 1 (Arithmetic)</button>
+                    <button class="warning" onclick="loadSampleProgram(2)">Load Sample 2 (Branch)</button>
+                </div>
+            </div>
+
+            <!-- Simulation Control Panel (Issue #16) -->
+            <div class="card">
+                <h2>2. Simulation Control Panel (Issue #16)</h2>
+                <div class="control-panel">
+                    <button onclick="stepSimulation()">▶ Step (1 Cycle)</button>
+                    <button id="runBtn" class="warning" onclick="toggleRunSimulation()">🔁 Run / Pause</button>
+                    <button class="danger" onclick="resetSimulation()">🔄 Reset</button>
+                    <div class="speed-control">
+                        <label for="speedRange">Speed:</label>
+                        <input type="range" id="speedRange" min="100" max="2000" step="100" value="800">
+                        <span id="speedVal">800ms</span>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; background: #0d1117; padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 5px;">
+                    <span>Cycle: <strong id="cycleCount" style="color: #58a6ff;">0</strong></span>
+                    <span>PC: <strong id="pcVal" style="color: #d29922;">0x00000000</strong></span>
+                    <span>Status: <strong id="simStatus" style="color: #3fb950;">Ready</strong></span>
+                    <span>Forwarding: <strong id="fwdStatus" style="color: #58a6ff;">ON</strong></span>
+                </div>
+            </div>
+
+            <!-- Console Log -->
+            <div class="card">
+                <h2>Assembler & Simulation Log</h2>
+                <div id="consoleLog" class="console-output">LIMO Simulator initialized with 16-register layout. Ready.</div>
+            </div>
+        </div>
+
+        <!-- Right Column: Pipeline State & LIMO Hardware View -->
+        <div>
+            <!-- Pipeline Stages Visualization -->
+            <div class="card">
+                <h2>3. 5-Stage Pipeline Registers (IF/ID/EX/MEM/WB)</h2>
+                <div class="pipeline-stages">
+                    <div class="stage-box stage-if">
+                        <div class="stage-title"><span>Instruction Fetch (IF)</span><span id="ifInstr" style="color: #58a6ff;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="ifDetails">PC: 0x00000000</div>
+                    </div>
+                    <div class="stage-box stage-id">
+                        <div class="stage-title"><span>Instruction Decode / Register Read (ID)</span><span id="idInstr" style="color: #8b949e;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="idDetails">Control Signals: -</div>
+                    </div>
+                    <div class="stage-box stage-ex">
+                        <div class="stage-title"><span>Execution / ALU (EX)</span><span id="exInstr" style="color: #d29922;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="exDetails">ALU Result: 0</div>
+                    </div>
+                    <div class="stage-box stage-mem">
+                        <div class="stage-title"><span>Memory Access (MEM)</span><span id="memInstr" style="color: #3fb950;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="memDetails">Memory Address / Data: -</div>
+                    </div>
+                    <div class="stage-box stage-wb">
+                        <div class="stage-title"><span>Write Back (WB)</span><span id="wbInstr" style="color: #f85149;">NOP</span></div>
+                        <div style="font-size: 0.8rem; color: #8b949e;" id="wbDetails">Destination Reg: -</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Register File State (LIMO 16-register specification with Sesotho names) -->
+            <div class="card">
+                <h2>4. LIMO Register File (x0 - x15)</h2>
+                <div id="registerGrid" class="register-grid"></div>
+            </div>
+
+            <!-- Data Memory Inspector -->
+            <div class="card">
+                <h2>5. Data Memory (RAM)</h2>
+                <table id="memoryTable">
+                    <thead>
+                        <tr><th>Address</th><th>Hex Value</th><th>Decimal</th></tr>
+                    </thead>
+                    <tbody id="memoryBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // LIMO Register Definitions (16 registers from M1 Spec)
+        const LIMO_REGISTERS = [
+            { num: 0, name: "lefela", alias: "zero", type: "SPR" },
+            { num: 1, name: "khutla", alias: "ra", type: "SPR" },
+            { num: 2, name: "sephuthelo", alias: "sp", type: "SPR" },
+            { num: 3, name: "thari", alias: "t0", type: "GPR" },
+            { num: 4, name: "molemo0", alias: "t1", type: "GPR" },
+            { num: 5, name: "molemo1", alias: "t2", type: "GPR" },
+            { num: 6, name: "poloko0", alias: "s0", type: "GPR" },
+            { num: 7, name: "poloko1", alias: "s1", type: "GPR" },
+            { num: 8, name: "thuso0", alias: "a0", type: "GPR" },
+            { num: 9, name: "thuso1", alias: "a1", type: "GPR" },
+            { num: 10, name: "thuso2", alias: "a2", type: "GPR" },
+            { num: 11, name: "thuso3", alias: "fp", type: "GPR" },
+            { num: 12, name: "thuso4", alias: "s2", type: "GPR" },
+            { num: 13, name: "thuso5", alias: "s3", type: "GPR" },
+            { num: 14, name: "t2", alias: "t2", type: "GPR" },
+            { num: 15, name: "t3", alias: "t3", type: "GPR" }
+        ];
+
+        // Simulator State
+        let state = {
+            pc: 0,
+            cycles: 0,
+            isRunning: false,
+            runInterval: null,
+            instructions: [],
+            labels: {},
+            registers: new Int32Array(16),
+            memory: new Int32Array(64),
+            pipeline: {
+                if: { pc: 0, instr: "NOP", raw: 0 },
+                id: { pc: 0, instr: "NOP", rs1: 0, rs2: 0, rd: 0, imm: 0, opcode: "NOP" },
+                ex: { pc: 0, instr: "NOP", aluResult: 0, rd: 0, opcode: "NOP" },
+                mem: { pc: 0, instr: "NOP", memData: 0, rd: 0, opcode: "NOP" },
+                wb: { pc: 0, instr: "NOP", writeVal: 0, rd: 0, opcode: "NOP" }
+            }
+        };
+
+        function log(msg) {
+            const consoleBox = document.getElementById("consoleLog");
+            consoleBox.innerHTML += `<div>[Cycle ${state.cycles}] ${msg}</div>`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function initUI() {
+            const regGrid = document.getElementById("registerGrid");
+            regGrid.innerHTML = "";
+            LIMO_REGISTERS.forEach(reg => {
+                regGrid.innerHTML += `<div class="reg-cell"><strong>x${reg.num} (${reg.name})</strong>: <span id="reg_${reg.num}">0</span></div>`;
+            });
+            updateMemoryTable();
+            updateRegisterDisplay();
+        }
+
+        function updateRegisterDisplay() {
+            LIMO_REGISTERS.forEach(reg => {
+                const el = document.getElementById(`reg_${reg.num}`);
+                if (el) el.innerText = state.registers[reg.num];
+            });
+            state.registers[0] = 0; // x0 (lefela) hardwired to 0
+        }
+
+        function updateMemoryTable() {
+            const memBody = document.getElementById("memoryBody");
+            memBody.innerHTML = "";
+            for (let i = 0; i < 16; i++) {
+                const val = state.memory[i];
+                memBody.innerHTML += `<tr><td>0x${(i * 4).toString(16).padStart(4, '0')}</td><td>0x${val.toString(16).padStart(8, '0')}</td><td>${val}</td></tr>`;
+            }
+        }
+
+        // Parse Register (supports x0-x15, aliases like ra, sp, or Sesotho names like lefela, khutla)
+        function parseReg(regStr) {
+            if (!regStr) return 0;
+            regStr = regStr.trim().toLowerCase().replace(/,/g, '');
+            if (regStr.startsWith('x')) {
+                let num = parseInt(regStr.substring(1));
+                return (num >= 0 && num < 16) ? num : 0;
+            }
+            let found = LIMO_REGISTERS.find(r => r.name === regStr || r.alias === regStr);
+            return found ? found.num : 0;
+        }
+
+        // LIMO Assembler (Issue #17)
+        function assembleAndLoadCode() {
+            const codeText = document.getElementById("assemblyCode").value;
+            const lines = codeText.split('\n');
+            state.instructions = [];
+            state.labels = {};
+            
+            let parsedLines = [];
+            let currentPC = 0;
+
+            // Pass 1: Handle labels and clean lines
+            for (let rawLine of lines) {
+                let cleanLine = rawLine.split('#')[0].trim();
+                if (!cleanLine) continue;
+
+                if (cleanLine.endsWith(':')) {
+                    let labelName = cleanLine.slice(0, -1).trim();
+                    state.labels[labelName] = currentPC;
+                    continue;
+                }
+
+                // Check inline label e.g., loop: eketsa ...
+                if (cleanLine.includes(':')) {
+                    let parts = cleanLine.split(':');
+                    let labelName = parts[0].trim();
+                    state.labels[labelName] = currentPC;
+                    cleanLine = parts[1].trim();
+                }
+
+                parsedLines.push({ rawLine: cleanLine, pc: currentPC });
+                currentPC++;
+            }
+
+            // Pass 2: Parse instructions
+            for (let item of parsedLines) {
+                let parts = item.rawLine.replace(/,/g, ' ').split(/\s+/);
+                let mnemonic = parts[0].toLowerCase();
+                state.instructions.push({ rawLine: item.rawLine, mnemonic: mnemonic, parts: parts });
+            }
+
+            resetSimulation();
+            log(`Successfully assembled ${state.instructions.length} LIMO instructions.`);
+            document.getElementById("simStatus").innerText = "Loaded & Ready";
+        }
+
+        function loadSampleProgram(id) {
+            if (id === 1) {
+                document.getElementById("assemblyCode").value = 
+`# LIMO Sample 1: Arithmetic & Memory
+eketsaI x3, x0, 15
+eketsaI x4, x0, 25
+eketsa  x5, x3, x4
+boloka  x5, 0(x0)
+kenya   x6, 0(x0)`;
+            } else if (id === 2) {
+                document.getElementById("assemblyCode").value = 
+`# LIMO Sample 2: Branch & Loop
+eketsaI x3, x0, 5
+eketsaI x4, x0, 0
+loop:
+tlosa   x3, x3, 1
+eketsaI x4, x4, 2
+lekana  x3, x0, end
+lekana  x3, x3, loop
+end:
+boloka  x4, 4(x0)`;
+            }
+            assembleAndLoadCode();
+        }
+
+        // Simulation Step (Issue #16)
+        function stepSimulation() {
+            if (state.instructions.length === 0) {
+                alert("Please assemble and load LIMO code first!");
+                return;
+            }
+
+            state.cycles++;
+
+            // 1. WB Stage
+            let wbInst = state.pipeline.mem;
+            if (wbInst && wbInst.rd && wbInst.rd !== 0) {
+                state.registers[wbInst.rd] = wbInst.writeVal;
+            }
+            state.pipeline.wb = wbInst;
+
+            // 2. MEM Stage
+            let memInst = state.pipeline.ex;
+            let memVal = 0;
+            if (memInst.mnemonic === 'kenya') {
+                let addr = (memInst.aluResult / 4) & 63;
+                memVal = state.memory[addr];
+                memInst.writeVal = memVal;
+            } else if (memInst.mnemonic === 'boloka') {
+                let addr = (memInst.aluResult / 4) & 63;
+                state.memory[addr] = state.registers[memInst.rs2 || 0];
+                memInst.writeVal = 0;
+            } else {
+                memInst.writeVal = memInst.aluResult;
+            }
+            state.pipeline.mem = memInst;
+
+            // 3. EX Stage
+            let exInst = state.pipeline.id;
+            let aluRes = 0;
+            let val1 = state.registers[exInst.rs1 || 0];
+            let val2 = state.registers[exInst.rs2 || 0];
+
+            if (exInst.mnemonic === 'eketsa') {
+                aluRes = val1 + val2;
+            } else if (exInst.mnemonic === 'tlosa') {
+                aluRes = val1 - val2;
+            } else if (exInst.mnemonic === 'eketsai') {
+                aluRes = val1 + exInst.imm;
+            } else if (exInst.mnemonic === 'kopanya') {
+                aluRes = val1 & val2;
+            } else if (exInst.mnemonic === 'kapa') {
+                aluRes = val1 | val2;
+            } else if (exInst.mnemonic === 'kenya' || exInst.mnemonic === 'boloka') {
+                aluRes = val1 + exInst.imm;
+            } else if (exInst.mnemonic === 'lekana') {
+                if (val1 === val2) {
+                    state.pc = exInst.branchTarget;
+                }
+            }
+            exInst.aluResult = aluRes;
+            exInst.writeVal = aluRes;
+            state.pipeline.ex = exInst;
+
+            // 4. ID Stage
+            let idInst = state.pipeline.if;
+            if (idInst.pc < state.instructions.length) {
+                let parsed = state.instructions[idInst.pc];
+                idInst.mnemonic = parsed.mnemonic;
+                idInst.rd = parseReg(parsed.parts[1]);
+                idInst.rs1 = parseReg(parsed.parts[2]);
+                
+                if (parsed.mnemonic === 'eketsa' || parsed.mnemonic === 'tlosa' || parsed.mnemonic === 'kopanya' || parsed.mnemonic === 'kapa') {
+                    idInst.rs2 = parseReg(parsed.parts[3]);
+                } else if (parsed.mnemonic === 'eketsai') {
+                    idInst.imm = parseInt(parsed.parts[3]) || 0;
+                } else if (parsed.mnemonic === 'kenya') {
+                    let memPart = parsed.parts[2]; // e.g., 0(x0)
+                    let match = memPart.match(/(-?\d+)\((.*?)\)/);
+                    if (match) {
+                        idInst.imm = parseInt(match[1]);
+                        idInst.rs1 = parseReg(match[2]);
+                    }
+                    idInst.rd = parseReg(parsed.parts[1]);
+                } else if (parsed.mnemonic === 'boloka') {
+                    let memPart = parsed.parts[2];
+                    let match = memPart.match(/(-?\d+)\((.*?)\)/);
+                    if (match) {
+                        idInst.imm = parseInt(match[1]);
+                        idInst.rs1 = parseReg(match[2]);
+                    }
+                    idInst.rs2 = parseReg(parsed.parts[1]);
+                } else if (parsed.mnemonic === 'lekana') {
+                    idInst.rs1 = parseReg(parsed.parts[1]);
+                    idInst.rs2 = parseReg(parsed.parts[2]);
+                    let labelTarget = parsed.parts[3];
+                    if (state.labels[labelTarget] !== undefined) {
+                        idInst.branchTarget = state.labels[labelTarget];
+                    }
+                }
+                idInst.instr = parsed.rawLine;
+            } else {
+                idInst.mnemonic = 'NOP';
+                idInst.instr = 'NOP';
+                idInst.rd = 0;
+            }
+            state.pipeline.id = idInst;
+
+            // 5. IF Stage
+            let ifInst = { pc: state.pc, instr: "NOP" };
+            if (state.pc < state.instructions.length) {
+                ifInst.instr = state.instructions[state.pc].rawLine;
+                state.pc++;
+            } else {
+                ifInst.instr = "NOP (End)";
+            }
+            state.pipeline.if = ifInst;
+
+            // Update UI
+            document.getElementById("cycleCount").innerText = state.cycles;
+            document.getElementById("pcVal").innerText = `0x${((state.pc - 1) * 4).toString(16).padStart(8, '0')}`;
+            document.getElementById("simStatus").innerText = "Running";
+            
+            updatePipelineUI();
+            updateRegisterDisplay();
+            updateMemoryTable();
+            log(`Executed cycle ${state.cycles}`);
+        }
+
+        function updatePipelineUI() {
+            document.getElementById("ifInstr").innerText = state.pipeline.if.instr;
+            document.getElementById("idInstr").innerText = state.pipeline.id.instr;
+            document.getElementById("exInstr").innerText = state.pipeline.ex.instr;
+            document.getElementById("memInstr").innerText = state.pipeline.mem.instr;
+            document.getElementById("wbInstr").innerText = state.pipeline.wb.instr;
+        }
+
+        function resetSimulation() {
+            if (state.isRunning) toggleRunSimulation();
+            state.pc = 0;
+            state.cycles = 0;
+            state.registers.fill(0);
+            state.memory.fill(0);
+            state.pipeline = {
+                if: { pc: 0, instr: "NOP" },
+                id: { pc: 0, instr: "NOP" },
+                ex: { pc: 0, instr: "NOP" },
+                mem: { pc: 0, instr: "NOP" },
+                wb: { pc: 0, instr: "NOP" }
+            };
+            document.getElementById("cycleCount").innerText = "0";
+            document.getElementById("pcVal").innerText = "0x00000000";
+            document.getElementById("simStatus").innerText = "Reset";
+            updatePipelineUI();
+            updateRegisterDisplay();
+            updateMemoryTable();
+            log("Simulator reset.");
+        }
+
+        function toggleRunSimulation() {
+            const btn = document.getElementById("runBtn");
+            const speed = parseInt(document.getElementById("speedRange").value);
+            
+            if (state.isRunning) {
+                clearInterval(state.runInterval);
+                state.isRunning = false;
+                btn.innerText = "🔁 Run / Pause";
+                btn.className = "warning";
+                document.getElementById("simStatus").innerText = "Paused";
+            } else {
+                state.isRunning = true;
+                btn.innerText = "⏸ Pause";
+                btn.className = "danger";
+                state.runInterval = setInterval(() => {
+                    stepSimulation();
+                }, speed);
+            }
+        }
+
+        document.getElementById("speedRange").addEventListener("input", (e) => {
+            document.getElementById("speedVal").innerText = e.target.value + "ms";
+            if (state.isRunning) {
+                toggleRunSimulation();
+                toggleRunSimulation();
+            }
+        });
+
+        window.onload = () => {
+            initUI();
+            loadSampleProgram(1);
+        };
+    </script>
+</body>
+</html>
